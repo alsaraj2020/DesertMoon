@@ -96,7 +96,7 @@ export default function App({ config }) {
 
   async function buyNow() {
     try {
-      if (!wallet.publicKey || !wallet.signTransaction) {
+      if (!wallet.publicKey || !wallet.sendTransaction) {
         throw new Error("Connect wallet first.");
       }
 
@@ -113,6 +113,7 @@ export default function App({ config }) {
       setBusy(true);
       setStatus("Preparing SOL transaction...");
 
+      const conn = new Connection(config.rpcUrl, "confirmed");
       const treasury = new PublicKey(config.treasuryWallet);
 
       const transferInstruction = SystemProgram.transfer({
@@ -124,54 +125,28 @@ export default function App({ config }) {
       const tx = new Transaction();
       tx.add(transferInstruction);
 
-      const latestBlockhash = await fetchJson("/latest-blockhash");
-
+      const latestBlockhash = await conn.getLatestBlockhash("confirmed");
       tx.feePayer = wallet.publicKey;
       tx.recentBlockhash = latestBlockhash.blockhash;
 
       setStatus("Approve transaction in wallet...");
 
-      const signedTx = await wallet.signTransaction(tx);
-      const serialized = signedTx.serialize();
-
-      let binary = "";
-      const bytes = new Uint8Array(serialized);
-      for (let i = 0; i < bytes.length; i++) {
-        binary += String.fromCharCode(bytes[i]);
-      }
-
-      const signedTransaction = btoa(binary);
-
-      setStatus("Sending transaction...");
-
-      const sent = await fetchJson("/send-signed-transaction", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          signedTransaction,
-        }),
+      const signature = await wallet.sendTransaction(tx, conn, {
+        skipPreflight: false,
+        preflightCommitment: "confirmed",
+        maxRetries: 5,
       });
-
-      const signature = sent.signature;
 
       setStatus("Confirming transaction...");
 
-      const conn = new Connection(config.rpcUrl, "confirmed");
-
-      try {
-        await conn.confirmTransaction(
-          {
-            signature,
-            blockhash: latestBlockhash.blockhash,
-            lastValidBlockHeight: latestBlockhash.lastValidBlockHeight,
-          },
-          "confirmed"
-        );
-      } catch (confirmErr) {
-        console.warn("Browser confirm failed, backend will verify purchase:", confirmErr);
-      }
+      await conn.confirmTransaction(
+        {
+          signature,
+          blockhash: latestBlockhash.blockhash,
+          lastValidBlockHeight: latestBlockhash.lastValidBlockHeight,
+        },
+        "confirmed"
+      );
 
       setStatus("Registering purchase...");
 
@@ -307,11 +282,12 @@ export default function App({ config }) {
         <section className="panel token-panel">
           <div className="panel-title">Price Tiers</div>
           <div className="tiers-table">
-            <div className="tier-row tier-header"><div>Tier</div><div>Price</div><div>Allocation</div></div>
+            <div className="tier-row tier-header"><div>Tier</div><div>Price</div><div>Activates At</div><div>Allocation</div></div>
             {(token.priceTiers || DEFAULT_TOKEN.priceTiers).map((tier) => (
               <div className="tier-row" key={tier.name}>
                 <div>{tier.name}</div>
                 <div>${Number(tier.priceUsd).toFixed(3)}</div>
+                <div>{fmt(tier.minRaisedSol || 0, 0)} – {fmt(tier.maxRaisedSol || 0, 0)} SOL</div>
                 <div>{tier.allocation || "—"}</div>
               </div>
             ))}
