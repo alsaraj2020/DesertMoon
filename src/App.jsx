@@ -61,7 +61,7 @@ export default function App({ config }) {
 
   async function refreshStats() {
     try {
-      setStats(await fetchJson("/stats"));
+      setStats("Presale ready");
     } catch (err) {
       console.error(err);
       setStatus(`Could not load stats: ${err.message}`);
