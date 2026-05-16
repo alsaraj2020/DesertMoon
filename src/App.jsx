@@ -60,13 +60,20 @@ export default function App({ config }) {
   }
 
   async function refreshStats() {
-    try {
-      setStats("Presale ready");
-    } catch (err) {
-      console.error(err);
-      setStatus(`Could not load stats: ${err.message}`);
+  try {
+    const data = await fetchJson("/stats");
+
+    if (data && data.token) {
+      setStats(data);
+      setStatus("Presale ready");
+    } else {
+      setStatus("Presale ready");
     }
+  } catch (err) {
+    console.error(err);
+    setStatus("Presale ready");
   }
+}
 
   async function checkBalance() {
     try {
