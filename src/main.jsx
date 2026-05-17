@@ -20,7 +20,7 @@ window.process = process;
 const CONFIG = {
   backendUrl: import.meta.env.VITE_BACKEND_URL || "http://localhost:8787",
   rpcUrl: import.meta.env.VITE_RPC_URL || "https://api.mainnet-beta.solana.com",
-  treasuryWallet: import.meta.env.VITE_TREASURY_WALLET || "DgsK21QaQVcRLhJyvAHDXqVyf3ZsJ9Cgkg1cPJKYmHx9",
+  treasuryWallet: import.meta.env.VITE_TREASURY_WALLET || "9JVtaDxzymteMrTKNGhsyGcNqsFfY7ce3LqdXhij4McC",
   publicSiteUrl: import.meta.env.VITE_PUBLIC_SITE_URL || "http://localhost:5173",
   projectId: import.meta.env.VITE_WALLETCONNECT_PROJECT_ID || "a2b3b8d814dd978790367e1ea11540dc",
   tokenSymbol: import.meta.env.VITE_TOKEN_SYMBOL || "DMOON",
