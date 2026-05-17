@@ -4,6 +4,8 @@ import { useWalletModal } from "@solana/wallet-adapter-react-ui";
 import { Connection, PublicKey, SystemProgram, Transaction, LAMPORTS_PER_SOL } from "@solana/web3.js";
 
 const DEFAULT_TOKEN = {
+  backendUrl: "https://desertmoon-backend.onrender.com",
+  totalSupply: 1000000000,
   totalSupply: 1000000000,
   presaleAllocationPercent: 30,
   presaleAllocationTokens: 300000000,
