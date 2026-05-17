@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
-    ""scripts": {
+    "scripts": {
   "dev": "vite --host 0.0.0.0",
   "build": "vite build --target esnext",
   "preview": "vite preview --host 0.0.0.0",
