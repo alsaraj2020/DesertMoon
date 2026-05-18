@@ -49,7 +49,7 @@ const CONFIG = {
     "9JVtaDxzymteMrTKNGhsyGcNqsFfY7ce3LqdXhij4McC",
 
   publicSiteUrl:
-    "https://desert-moon-kappa.vercel.app",
+    "https://desertmoon.io",
 
   tokenSymbol:
     import.meta.env.VITE_TOKEN_SYMBOL || "DMOON",
@@ -75,7 +75,7 @@ function Providers() {
 
   return (
     <ConnectionProvider endpoint={CONFIG.rpcUrl}>
-      <WalletProvider wallets={wallets} autoConnect>
+      <WalletProvider wallets={wallets} autoConnect={false}>
         <WalletModalProvider>
           <App config={CONFIG} />
         </WalletModalProvider>
