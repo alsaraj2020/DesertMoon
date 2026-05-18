@@ -25,12 +25,6 @@ const DEFAULT_TOKEN = {
   hardCapSol: 75000,
   teamCliffMonths: 11,
   teamVestingMonths: 18,
-  priceTiers: [
-    { name: "Tier 1", priceUsd: 0.005, allocation: "15%" },
-    { name: "Tier 2", priceUsd: 0.01, allocation: "20%" },
-    { name: "Tier 3", priceUsd: 0.02, allocation: "25%" },
-    { name: "Tier 4", priceUsd: 0.035, allocation: "40%" },
-  ],
 };
 
 function fmt(value, max = 2) {
@@ -45,6 +39,7 @@ export default function App({ config }) {
 
   const [amount, setAmount] = useState("");
   const [status, setStatus] = useState("Not connected");
+
   const [stats, setStats] = useState({
     totals: {
       totalRaisedSol: 0,
@@ -173,7 +168,8 @@ export default function App({ config }) {
 
       tx.add(transferInstruction);
 
-      const latestBlockhash = await conn.getLatestBlockhash("confirmed");
+      const latestBlockhash =
+        await conn.getLatestBlockhash("confirmed");
 
       tx.feePayer = wallet.publicKey;
       tx.recentBlockhash = latestBlockhash.blockhash;
@@ -192,7 +188,8 @@ export default function App({ config }) {
         {
           signature,
           blockhash: latestBlockhash.blockhash,
-          lastValidBlockHeight: latestBlockhash.lastValidBlockHeight,
+          lastValidBlockHeight:
+            latestBlockhash.lastValidBlockHeight,
         },
         "confirmed"
       );
@@ -212,9 +209,9 @@ export default function App({ config }) {
       });
 
       setStatus(
-        `Success! Received ${fmt(data.purchase.tokenAmount)} ${
-          config.tokenSymbol || "DMOON"
-        }`
+        `Success! Received ${fmt(
+          data.purchase.tokenAmount
+        )} ${config.tokenSymbol || "DMOON"}`
       );
 
       setAmount("");
@@ -247,30 +244,6 @@ export default function App({ config }) {
           <p className="subtitle">
             The next moonshot on Solana
           </p>
-
-          <div className="hero-stats">
-            <div className="stat-chip">
-              <span className="label">Soft Cap</span>
-              <strong>{fmt(token.softCapSol, 0)} SOL</strong>
-            </div>
-
-            <div className="stat-chip">
-              <span className="label">Hard Cap</span>
-              <strong>{fmt(token.hardCapSol, 0)} SOL</strong>
-            </div>
-
-            <div className="stat-chip">
-              <span className="label">Max Contribution</span>
-              <strong>{fmt(token.maxContributionSol)} SOL</strong>
-            </div>
-
-            <div className="stat-chip">
-              <span className="label">Presale Price</span>
-              <strong>
-                ${token.currentPriceUsd || token.presalePriceUsd}
-              </strong>
-            </div>
-          </div>
         </header>
 
         <section className="panel connect-panel">
@@ -283,7 +256,11 @@ export default function App({ config }) {
               className="wallet-btn phantom"
               onClick={() => setVisible(true)}
             >
-              <img src="/assets/phantom.png" alt="Phantom" />
+              <img
+                src="/assets/phantom.png"
+                alt="Phantom"
+              />
+
               <span>Connect Phantom</span>
             </button>
 
@@ -291,16 +268,12 @@ export default function App({ config }) {
               className="wallet-btn solflare"
               onClick={() => setVisible(true)}
             >
-              <img src="/assets/solflare.png" alt="Solflare" />
-              <span>Connect Solflare</span>
-            </button>
+              <img
+                src="/assets/solflare.png"
+                alt="Solflare"
+              />
 
-            <button
-              className="wallet-btn walletconnect"
-              onClick={() => setVisible(true)}
-            >
-              <span className="wc-icon">⌁</span>
-              <span>WalletConnect</span>
+              <span>Connect Solflare</span>
             </button>
           </div>
 
@@ -308,27 +281,35 @@ export default function App({ config }) {
             Secure & Non-Custodial
           </div>
 
-          <div className="wallet-status">{status}</div>
+          <div className="wallet-status">
+            {status}
+          </div>
         </section>
 
         <section className="panel buy-panel">
           <div className="buy-grid">
             <div className="buy-left">
-              <div className="panel-subtitle">Buy DMOON</div>
+              <div className="panel-subtitle">
+                Buy DMOON
+              </div>
 
               <label>Enter Amount (SOL)</label>
 
               <div className="amount-wrap">
                 <input
                   value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
+                  onChange={(e) =>
+                    setAmount(e.target.value)
+                  }
                   type="number"
                   min="0"
                   step="0.001"
                   placeholder="0.00"
                 />
 
-                <span className="asset-pill">SOL</span>
+                <span className="asset-pill">
+                  SOL
+                </span>
               </div>
 
               <div className="receive-row">
@@ -339,25 +320,19 @@ export default function App({ config }) {
                   {config.tokenSymbol || "DMOON"}
                 </strong>
               </div>
-
-              <div className="helper-row">
-                SOL payments are supported on Solana.
-              </div>
             </div>
 
             <div className="buy-right">
-              <div className="pay-tabs">
-                <button className="pay-tab active">
-                  SOL
-                </button>
-              </div>
-
               <button
                 className="buy-button"
-                disabled={busy || !wallet.connected}
+                disabled={
+                  busy || !wallet.connected
+                }
                 onClick={buyNow}
               >
-                {busy ? "PROCESSING..." : "🚀 BUY NOW"}
+                {busy
+                  ? "PROCESSING..."
+                  : "🚀 BUY NOW"}
               </button>
 
               <button
@@ -366,12 +341,6 @@ export default function App({ config }) {
               >
                 Check My DMOON Balance
               </button>
-
-              <p className="buy-note">
-                By purchasing, you agree to our terms
-                and confirm you understand this is a
-                presale.
-              </p>
             </div>
           </div>
         </section>
