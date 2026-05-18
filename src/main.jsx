@@ -2,18 +2,27 @@ import { Buffer } from "buffer";
 import process from "process";
 import React from "react";
 import { createRoot } from "react-dom/client";
+
 import {
   ConnectionProvider,
   WalletProvider,
 } from "@solana/wallet-adapter-react";
 
-import { WalletModalProvider } from "@solana/wallet-adapter-react-ui";
+import {
+  WalletModalProvider,
+} from "@solana/wallet-adapter-react-ui";
 
-import { PhantomWalletAdapter } from "@solana/wallet-adapter-phantom";
-import { SolflareWalletAdapter } from "@solana/wallet-adapter-solflare";
-import { WalletConnectWalletAdapter } from "@walletconnect/solana-adapter";
+import {
+  PhantomWalletAdapter,
+} from "@solana/wallet-adapter-phantom";
 
-import { WalletAdapterNetwork } from "@solana/wallet-adapter-base";
+import {
+  SolflareWalletAdapter,
+} from "@solana/wallet-adapter-solflare";
+
+import {
+  WalletAdapterNetwork,
+} from "@solana/wallet-adapter-base";
 
 import App from "./App.jsx";
 
@@ -29,7 +38,7 @@ window.process = process;
 const CONFIG = {
   backendUrl:
     import.meta.env.VITE_BACKEND_URL ||
-    "http://localhost:8787",
+    "https://desertmoon-backend.onrender.com",
 
   rpcUrl:
     import.meta.env.VITE_RPC_URL ||
@@ -41,9 +50,6 @@ const CONFIG = {
 
   publicSiteUrl:
     "https://desert-moon-kappa.vercel.app",
-
-  projectId:
-    "a2b3b8d814dd978790367e1ea11540dc",
 
   tokenSymbol:
     import.meta.env.VITE_TOKEN_SYMBOL || "DMOON",
@@ -62,29 +68,6 @@ function Providers() {
 
       new SolflareWalletAdapter({
         network: WalletAdapterNetwork.Mainnet,
-      }),
-
-      new WalletConnectWalletAdapter({
-        network: WalletAdapterNetwork.Mainnet,
-
-        options: {
-          projectId: CONFIG.projectId,
-
-          relayUrl: "wss://relay.walletconnect.com",
-
-          metadata: {
-            name: "DesertMoon",
-
-            description:
-              "DesertMoon DMOON presale on Solana",
-
-            url: CONFIG.publicSiteUrl,
-
-            icons: [
-              "https://desert-moon-kappa.vercel.app/logo.png",
-            ],
-          },
-        },
       }),
     ],
     []
