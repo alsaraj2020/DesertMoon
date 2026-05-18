@@ -1,14 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useWalletModal } from "@solana/wallet-adapter-react-ui";
-
-import {
-  Connection,
-  PublicKey,
-  SystemProgram,
-  Transaction,
-  LAMPORTS_PER_SOL,
-} from "@solana/web3.js";
+import { Connection, PublicKey, SystemProgram, Transaction, LAMPORTS_PER_SOL } from "@solana/web3.js";
 
 const DEFAULT_TOKEN = {
   totalSupply: 1000000000,
@@ -25,6 +18,12 @@ const DEFAULT_TOKEN = {
   hardCapSol: 75000,
   teamCliffMonths: 11,
   teamVestingMonths: 18,
+  priceTiers: [
+    { name: "Tier 1", priceUsd: 0.005, allocation: "15%" },
+    { name: "Tier 2", priceUsd: 0.010, allocation: "20%" },
+    { name: "Tier 3", priceUsd: 0.020, allocation: "25%" },
+    { name: "Tier 4", priceUsd: 0.035, allocation: "40%" },
+  ],
 };
 
 function fmt(value, max = 2) {
@@ -46,7 +45,6 @@ export default function App({ config }) {
       percentFunded: 0,
       hardCapSol: 75000,
     },
-
     token: DEFAULT_TOKEN,
   });
 
@@ -114,7 +112,7 @@ export default function App({ config }) {
       );
     } catch (err) {
       console.error(err);
-      setStatus("Backend waking up... please try again.");
+      setStatus(`Balance check failed: ${err.message}`);
     }
   }
 
@@ -200,11 +198,9 @@ export default function App({ config }) {
       try {
         await fetchJson("/register-purchase", {
           method: "POST",
-
           headers: {
             "Content-Type": "application/json",
           },
-
           body: JSON.stringify({
             wallet: wallet.publicKey.toString(),
             amount: n,
@@ -212,7 +208,7 @@ export default function App({ config }) {
           }),
         });
       } catch (e) {
-        console.error("Register purchase failed:", e);
+        console.error(e);
       }
 
       setStatus(
@@ -223,10 +219,7 @@ export default function App({ config }) {
 
       setAmount("");
 
-      setTimeout(() => {
-        refreshStats();
-      }, 2000);
-
+      await refreshStats();
     } catch (err) {
       console.error(err);
       setStatus(`Buy failed: ${err.message}`);
@@ -254,6 +247,30 @@ export default function App({ config }) {
           <p className="subtitle">
             The next moonshot on Solana
           </p>
+
+          <div className="hero-stats">
+            <div className="stat-chip">
+              <span className="label">Soft Cap</span>
+              <strong>{fmt(token.softCapSol, 0)} SOL</strong>
+            </div>
+
+            <div className="stat-chip">
+              <span className="label">Hard Cap</span>
+              <strong>{fmt(token.hardCapSol, 0)} SOL</strong>
+            </div>
+
+            <div className="stat-chip">
+              <span className="label">Max Contribution</span>
+              <strong>{fmt(token.maxContributionSol)} SOL</strong>
+            </div>
+
+            <div className="stat-chip">
+              <span className="label">Presale Price</span>
+              <strong>
+                ${token.currentPriceUsd || token.presalePriceUsd}
+              </strong>
+            </div>
+          </div>
         </header>
 
         <section className="panel connect-panel">
@@ -288,12 +305,10 @@ export default function App({ config }) {
           </div>
 
           <div className="connect-note">
-            Secure & Non-Custodial
+            Secure &amp; Non-Custodial
           </div>
 
-          <div className="wallet-status">
-            {status}
-          </div>
+          <div className="wallet-status">{status}</div>
         </section>
 
         <section className="panel buy-panel">
@@ -330,9 +345,19 @@ export default function App({ config }) {
                   {config.tokenSymbol || "DMOON"}
                 </strong>
               </div>
+
+              <div className="helper-row">
+                SOL payments are supported on Solana.
+              </div>
             </div>
 
             <div className="buy-right">
+              <div className="pay-tabs">
+                <button className="pay-tab active">
+                  SOL
+                </button>
+              </div>
+
               <button
                 className="buy-button"
                 disabled={
@@ -351,7 +376,209 @@ export default function App({ config }) {
               >
                 Check My DMOON Balance
               </button>
+
+              <p className="buy-note">
+                By purchasing, you agree to our terms
+                and confirm you understand this is a
+                presale.
+              </p>
             </div>
+          </div>
+
+          <div className="tier-line">
+            <strong>
+              {token.currentTier?.name || "Tier 1"} Price:
+              ${token.currentPriceUsd || token.presalePriceUsd}
+            </strong>
+
+            {token.nextTier ? (
+              <span>
+                Next: ${token.nextTier.priceUsd} at{" "}
+                {fmt(token.nextTier.minRaisedSol, 0)} SOL
+              </span>
+            ) : (
+              <span>Final tier active</span>
+            )}
+          </div>
+
+          <div className="raised-block">
+            <div className="raised-head">
+              <div>
+                <span className="mini-label">
+                  Total Raised
+                </span>
+
+                <strong id="raisedValue">
+                  {fmt(totals.totalRaisedSol)} SOL
+                </strong>
+              </div>
+
+              <div className="funded">
+                {Number(
+                  totals.percentFunded || 0
+                ).toFixed(2)}
+                % FUNDED
+              </div>
+            </div>
+
+            <div className="progress-rail">
+              <div
+                className="progress-fill"
+                style={{
+                  width: `${Math.min(
+                    100,
+                    Number(totals.percentFunded || 0)
+                  )}%`,
+                }}
+              />
+            </div>
+
+            <div className="progress-caption">
+              <span>{fmt(totals.totalRaisedSol)} SOL</span>
+
+              <span>
+                {fmt(totals.hardCapSol || 75000, 0)} SOL
+              </span>
+            </div>
+          </div>
+        </section>
+
+        <section className="panel token-panel">
+          <div className="panel-title">
+            Token Information
+          </div>
+
+          <div className="token-grid">
+            <div className="token-row">
+              <span>Total Supply</span>
+              <strong>{fmt(token.totalSupply, 0)}</strong>
+            </div>
+
+            <div className="token-row">
+              <span>Max Contribution</span>
+              <strong>{fmt(token.maxContributionSol)} SOL</strong>
+            </div>
+
+            <div className="token-row">
+              <span>Presale Allocation</span>
+
+              <strong>
+                {token.presaleAllocationPercent}% (
+                {fmt(
+                  (token.presaleAllocationTokens || 0) /
+                    1_000_000,
+                  0
+                )}
+                M)
+              </strong>
+            </div>
+
+            <div className="token-row">
+              <span>Soft Cap</span>
+              <strong>{fmt(token.softCapSol, 0)} SOL</strong>
+            </div>
+
+            <div className="token-row">
+              <span>Team Allocation</span>
+
+              <strong>
+                {token.teamAllocationPercent}% (
+                {fmt(
+                  (token.teamAllocationTokens || 0) /
+                    1_000_000,
+                  0
+                )}
+                M)
+              </strong>
+            </div>
+
+            <div className="token-row">
+              <span>Hard Cap</span>
+              <strong>{fmt(token.hardCapSol, 0)} SOL</strong>
+            </div>
+
+            <div className="token-row">
+              <span>Presale Price</span>
+              <strong>${token.presalePriceUsd}</strong>
+            </div>
+
+            <div className="token-row">
+              <span>Team Cliff</span>
+              <strong>{token.teamCliffMonths} months</strong>
+            </div>
+
+            <div className="token-row">
+              <span>Listing Price</span>
+              <strong>${token.listingPriceUsd}</strong>
+            </div>
+
+            <div className="token-row">
+              <span>Team Vesting</span>
+              <strong>{token.teamVestingMonths} months</strong>
+            </div>
+
+            <div className="token-row">
+              <span>Blockchain</span>
+              <strong>{token.blockchain}</strong>
+            </div>
+
+            <div className="token-row">
+              <span>Current Price</span>
+              <strong>${token.currentPriceUsd}</strong>
+            </div>
+          </div>
+        </section>
+
+        <section className="panel token-panel">
+          <div className="panel-title">
+            Price Tiers
+          </div>
+
+          <div className="tiers-table">
+            <div className="tier-row tier-header">
+              <div>Tier</div>
+              <div>Price</div>
+              <div>Activates At</div>
+              <div>Allocation</div>
+            </div>
+
+            {(token.priceTiers ||
+              DEFAULT_TOKEN.priceTiers).map(
+              (tier) => (
+                <div
+                  className="tier-row"
+                  key={tier.name}
+                >
+                  <div>{tier.name}</div>
+
+                  <div>
+                    ${Number(tier.priceUsd).toFixed(3)}
+                  </div>
+
+                  <div>
+                    {fmt(tier.minRaisedSol || 0, 0)} –{" "}
+                    {fmt(tier.maxRaisedSol || 0, 0)} SOL
+                  </div>
+
+                  <div>{tier.allocation || "—"}</div>
+                </div>
+              )
+            )}
+          </div>
+        </section>
+
+        <section className="panel token-panel">
+          <div className="panel-title">
+            About DesertMoon
+          </div>
+
+          <div className="about-text">
+            DesertMoon ($DMOON) is a high-potential
+            Solana meme coin created for the next bull
+            run, combining viral community energy,
+            limited presale access, fast blockchain
+            technology, and strong growth potential
+            designed to reach the moon.
           </div>
         </section>
 
