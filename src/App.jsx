@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useWalletModal } from "@solana/wallet-adapter-react-ui";
+
 import {
   Connection,
   PublicKey,
@@ -10,7 +11,6 @@ import {
 } from "@solana/web3.js";
 
 const DEFAULT_TOKEN = {
-  backendUrl: "https://desertmoon-backend.onrender.com",
   totalSupply: 1000000000,
   presaleAllocationPercent: 30,
   presaleAllocationTokens: 300000000,
@@ -46,6 +46,7 @@ export default function App({ config }) {
       percentFunded: 0,
       hardCapSol: 75000,
     },
+
     token: DEFAULT_TOKEN,
   });
 
@@ -113,7 +114,7 @@ export default function App({ config }) {
       );
     } catch (err) {
       console.error(err);
-      setStatus(`Balance check failed: ${err.message}`);
+      setStatus("Backend waking up... please try again.");
     }
   }
 
@@ -194,29 +195,38 @@ export default function App({ config }) {
         "confirmed"
       );
 
-      setStatus("Registering purchase...");
+      setStatus("Transaction successful!");
 
-      const data = await fetchJson("/register-purchase", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          wallet: wallet.publicKey.toString(),
-          amount: n,
-          txSignature: signature,
-        }),
-      });
+      try {
+        await fetchJson("/register-purchase", {
+          method: "POST",
+
+          headers: {
+            "Content-Type": "application/json",
+          },
+
+          body: JSON.stringify({
+            wallet: wallet.publicKey.toString(),
+            amount: n,
+            txSignature: signature,
+          }),
+        });
+      } catch (e) {
+        console.error("Register purchase failed:", e);
+      }
 
       setStatus(
-        `Success! Received ${fmt(
-          data.purchase.tokenAmount
-        )} ${config.tokenSymbol || "DMOON"}`
+        `Success! ${fmt(receiveAmount)} ${
+          config.tokenSymbol || "DMOON"
+        } purchased`
       );
 
       setAmount("");
 
-      await refreshStats();
+      setTimeout(() => {
+        refreshStats();
+      }, 2000);
+
     } catch (err) {
       console.error(err);
       setStatus(`Buy failed: ${err.message}`);
