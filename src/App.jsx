@@ -1,7 +1,13 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useWalletModal } from "@solana/wallet-adapter-react-ui";
-import { Connection, PublicKey, SystemProgram, Transaction, LAMPORTS_PER_SOL } from "@solana/web3.js";
+import {
+  Connection,
+  PublicKey,
+  SystemProgram,
+  Transaction,
+  LAMPORTS_PER_SOL,
+} from "@solana/web3.js";
 
 const DEFAULT_TOKEN = {
   totalSupply: 1000000000,
@@ -20,8 +26,8 @@ const DEFAULT_TOKEN = {
   teamVestingMonths: 18,
   priceTiers: [
     { name: "Tier 1", priceUsd: 0.005, allocation: "15%" },
-    { name: "Tier 2", priceUsd: 0.010, allocation: "20%" },
-    { name: "Tier 3", priceUsd: 0.020, allocation: "25%" },
+    { name: "Tier 2", priceUsd: 0.01, allocation: "20%" },
+    { name: "Tier 3", priceUsd: 0.02, allocation: "25%" },
     { name: "Tier 4", priceUsd: 0.035, allocation: "40%" },
   ],
 };
@@ -80,26 +86,15 @@ export default function App({ config }) {
     return data;
   }
 
-  function openWalletModal() {
-    try {
-      localStorage.removeItem("walletName");
-      localStorage.removeItem("walletAdapter");
-      setVisible(true);
-    } catch (e) {
-      setVisible(true);
-    }
-  }
-
   async function refreshStats() {
     try {
       const data = await fetchJson("/stats");
 
       if (data && data.token) {
         setStats(data);
-        setStatus("Presale ready");
-      } else {
-        setStatus("Presale ready");
       }
+
+      setStatus("Presale ready");
     } catch (err) {
       console.error(err);
       setStatus("Presale ready");
@@ -123,8 +118,19 @@ export default function App({ config }) {
       );
     } catch (err) {
       console.error(err);
-      setStatus("Backend waking up... please try again.");
+      setStatus(`Balance check failed: ${err.message}`);
     }
+  }
+
+  async function openWalletModal() {
+    try {
+      localStorage.removeItem("walletName");
+      localStorage.removeItem("walletAdapter");
+    } catch (e) {
+      console.log(e);
+    }
+
+    setVisible(true);
   }
 
   useEffect(() => {
@@ -219,7 +225,7 @@ export default function App({ config }) {
           }),
         });
       } catch (e) {
-        console.error("Register purchase failed:", e);
+        console.error(e);
       }
 
       setStatus(
@@ -230,10 +236,7 @@ export default function App({ config }) {
 
       setAmount("");
 
-      setTimeout(() => {
-        refreshStats();
-      }, 2000);
-
+      await refreshStats();
     } catch (err) {
       console.error(err);
       setStatus(`Buy failed: ${err.message}`);
@@ -324,3 +327,159 @@ export default function App({ config }) {
 
           <div className="wallet-status">{status}</div>
         </section>
+
+        <section className="panel buy-panel">
+          <div className="buy-grid">
+            <div className="buy-left">
+              <div className="panel-subtitle">
+                Buy DMOON
+              </div>
+
+              <label>Enter Amount (SOL)</label>
+
+              <div className="amount-wrap">
+                <input
+                  value={amount}
+                  onChange={(e) =>
+                    setAmount(e.target.value)
+                  }
+                  type="number"
+                  min="0"
+                  step="0.001"
+                  placeholder="0.00"
+                />
+
+                <span className="asset-pill">
+                  SOL
+                </span>
+              </div>
+
+              <div className="receive-row">
+                <span>You will receive</span>
+
+                <strong>
+                  {fmt(receiveAmount)}{" "}
+                  {config.tokenSymbol || "DMOON"}
+                </strong>
+              </div>
+
+              <div className="helper-row">
+                SOL payments are supported on Solana.
+              </div>
+            </div>
+
+            <div className="buy-right">
+              <div className="pay-tabs">
+                <button className="pay-tab active">
+                  SOL
+                </button>
+              </div>
+
+              <button
+                className="buy-button"
+                disabled={busy || !wallet.connected}
+                onClick={buyNow}
+              >
+                {busy
+                  ? "PROCESSING..."
+                  : "🚀 BUY NOW"}
+              </button>
+
+              <button
+                className="buy-button balance-buy-button"
+                onClick={checkBalance}
+              >
+                Check My DMOON Balance
+              </button>
+
+              <p className="buy-note">
+                By purchasing, you agree to our terms
+                and confirm you understand this is a
+                presale.
+              </p>
+            </div>
+          </div>
+
+          <div className="tier-line">
+            <strong>
+              {token.currentTier?.name || "Tier 1"} Price:
+              ${token.currentPriceUsd || token.presalePriceUsd}
+            </strong>
+
+            {token.nextTier ? (
+              <span>
+                Next: ${token.nextTier.priceUsd} at{" "}
+                {fmt(token.nextTier.minRaisedSol, 0)} SOL
+              </span>
+            ) : (
+              <span>Final tier active</span>
+            )}
+          </div>
+
+          <div className="raised-block">
+            <div className="raised-head">
+              <div>
+                <span className="mini-label">
+                  Total Raised
+                </span>
+
+                <strong id="raisedValue">
+                  {fmt(totals.totalRaisedSol)} SOL
+                </strong>
+              </div>
+
+              <div className="funded">
+                {Number(
+                  totals.percentFunded || 0
+                ).toFixed(2)}
+                % FUNDED
+              </div>
+            </div>
+
+            <div className="progress-rail">
+              <div
+                className="progress-fill"
+                style={{
+                  width: `${Math.min(
+                    100,
+                    Number(totals.percentFunded || 0)
+                  )}%`,
+                }}
+              />
+            </div>
+
+            <div className="progress-caption">
+              <span>{fmt(totals.totalRaisedSol)} SOL</span>
+
+              <span>
+                {fmt(totals.hardCapSol || 75000, 0)} SOL
+              </span>
+            </div>
+          </div>
+        </section>
+
+        <section className="panel token-panel">
+          <div className="panel-title">
+            Token Information
+          </div>
+
+          <div className="token-grid">
+            <div className="token-row">
+              <span>Total Supply</span>
+              <strong>{fmt(token.totalSupply, 0)}</strong>
+            </div>
+
+            <div className="token-row">
+              <span>Max Contribution</span>
+              <strong>{fmt(token.maxContributionSol)} SOL</strong>
+            </div>
+          </div>
+        </section>
+
+        <section className="footer-banner">
+          Don't miss the moon. Buy $DMOON today!
+        </section>
+      </main>
+    </>
+  );
+}
